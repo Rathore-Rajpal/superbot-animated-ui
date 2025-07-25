@@ -69,6 +69,18 @@ const Chat = ({ category, onBack }: ChatProps) => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
+    // Send POST request directly to the external webhook URL
+    fetch('https://n8nautomation.site/webhook-test/531005de-ee05-4714-a43b-dcb9b58c9b3c', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ question: inputValue })
+    }).catch((err) => {
+      // Optionally handle errors here
+      console.error('Webhook error:', err);
+    });
+
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
