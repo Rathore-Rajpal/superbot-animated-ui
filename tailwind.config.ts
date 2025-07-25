@@ -61,7 +61,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom SuperBot colors
+				'electric-blue': 'hsl(var(--electric-blue))',
+				'cosmic-purple': 'hsl(var(--cosmic-purple))',
+				'neon-cyan': 'hsl(var(--neon-cyan))',
+				'glass-bg': 'hsl(var(--glass-bg))',
+				'glass-border': 'hsl(var(--glass-border))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
