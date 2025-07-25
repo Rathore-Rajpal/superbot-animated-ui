@@ -29,7 +29,7 @@ const Home = ({ onSelectOption }: HomeProps) => {
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
         {/* Title section */}
         <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+          <h1 className="text-6xl md:text-7xl font-bold mb-6 text-title-blue">
             Welcome to SuperBot
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">

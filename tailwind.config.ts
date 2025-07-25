@@ -63,6 +63,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				// Custom SuperBot colors
+				'title-blue': 'hsl(var(--title-blue))',
 				'electric-blue': 'hsl(var(--electric-blue))',
 				'cosmic-purple': 'hsl(var(--cosmic-purple))',
 				'neon-cyan': 'hsl(var(--neon-cyan))',
