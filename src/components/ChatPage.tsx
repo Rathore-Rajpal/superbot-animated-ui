@@ -5,6 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React from 'react';
 
 declare global {
+  interface Window {
+    n8nChatInstance?: any;
+    n8nChatInitialized?: boolean;
+  }
+  
   namespace JSX {
     interface IntrinsicElements {
       'n8nchatui-inpage': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
@@ -78,7 +83,7 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
                 avatarBorderRadius: 25,
                 messageBorderRadius: 6,
                 showTitle: true,
-                title: "${escapedCategory} Assistant ",
+                title: "Tasknova Superbot",
                 titleAvatarSrc: "https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//357f28f4-9993-4f63-b609-c31f60111133_1752589383843.png",
                 avatarSize: 40,
                 welcomeMessage: "Hey there! I'm your ${escapedCategory} assistant. How can I help you today?",
@@ -217,6 +222,8 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
       }
     };
   }, [category]);
+
+
 
   return (
     <AnimatePresence>
