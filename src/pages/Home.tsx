@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DollarSign, CheckSquare, Sparkles, Zap } from 'lucide-react';
 import OptionCard from '@/components/OptionCard';
 import FloatingParticles from '@/components/FloatingParticles';
+import { ChatPage } from '@/components/ChatPage';
 
 interface HomeProps {
   onSelectOption: (option: string) => void;
@@ -9,10 +10,14 @@ interface HomeProps {
 
 const Home = ({ onSelectOption }: HomeProps) => {
   const [isVisible, setIsVisible] = useState(true);
+  const [chatCategory, setChatCategory] = useState<string | null>(null);
 
   const handleOptionClick = (option: string) => {
-    setIsVisible(false);
-    setTimeout(() => onSelectOption(option), 300);
+    setChatCategory(option);
+  };
+
+  const handleCloseChat = () => {
+    setChatCategory(null);
   };
 
   return (
@@ -76,6 +81,14 @@ const Home = ({ onSelectOption }: HomeProps) => {
           </p>
         </div>
       </div>
+      
+      {/* Chat Page - Rendered when a category is selected */}
+      {chatCategory && (
+        <ChatPage 
+          category={chatCategory} 
+          onClose={handleCloseChat} 
+        />
+      )}
     </div>
   );
 };
