@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { X, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import React from 'react';
+import { DatabaseView } from './DatabaseView';
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ interface ChatPageProps {
 
 export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
   const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const [showDatabase, setShowDatabase] = useState(false);
 
   useEffect(() => {
     // Create and append the chat element
@@ -86,7 +88,7 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
                 title: "Tasknova Superbot",
                 titleAvatarSrc: "https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//357f28f4-9993-4f63-b609-c31f60111133_1752589383843.png",
                 avatarSize: 40,
-                welcomeMessage: "Hey there! I'm your ${escapedCategory} assistant. How can I help you today?",
+                welcomeMessage: "Hey there! I'm your Task assistant. How can I help you today?",
                 errorMessage: "Please connect me to n8n first",
                 backgroundColor: "#010c27",
                 height: 0,
@@ -241,20 +243,46 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
           exit={{ y: 50, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         >
-          {/* Close Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="absolute top-4 right-4 z-10 rounded-full w-8 h-8 bg-card/50 hover:bg-card/80 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-          
-          {/* Chat Container */}
-          <div id="chat-container" className="w-full h-full" />
+          <div className="absolute top-4 right-4 z-50 flex space-x-2">
+            <Button
+              onClick={() => setShowDatabase(!showDatabase)}
+              variant={showDatabase ? 'default' : 'outline'}
+              className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border-white/20"
+            >
+              <Database className="h-4 w-4" />
+              <span>{showDatabase ? 'Hide Database' : 'View Database'}</span>
+            </Button>
+            <Button
+              onClick={onClose}
+              size="icon"
+              variant="ghost"
+              className="rounded-full w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm"
+            >
+              <X className="h-5 w-5 text-white" />
+            </Button>
+          </div>
+          <div className="relative w-full h-full">
+            <AnimatePresence>
+              {showDatabase && (
+                <motion.div 
+                  className="absolute inset-0 bg-black/80 z-40 overflow-y-auto p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="max-w-6xl mx-auto">
+                    <DatabaseView />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div id="chat-container" className="w-full h-full"></div>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
   );
 };
+
+export default ChatPage;

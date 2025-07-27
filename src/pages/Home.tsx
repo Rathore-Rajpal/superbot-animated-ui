@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, CheckSquare, Sparkles, Zap, ArrowRight } from 'lucide-react';
+import { DollarSign, CheckSquare, Sparkles, Zap, ArrowRight, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OptionCard from '@/components/OptionCard';
 import FloatingParticles from '@/components/FloatingParticles';
@@ -71,7 +71,7 @@ const Home = ({ onSelectOption }: HomeProps) => {
           className="mb-12"
         >
           <img 
-            src="https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//logo2-removebg-preview.png" 
+            src="https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//LOGO-02.png" 
             alt="Tasknova Logo" 
             className="h-16 md:h-20"
           />
@@ -154,6 +154,20 @@ const Home = ({ onSelectOption }: HomeProps) => {
               />
             </motion.div>
           </div>
+          
+          {/* View Database Button */}
+          <motion.div 
+            variants={item}
+            className="mt-12 text-center"
+          >
+            <button
+              onClick={() => onSelectOption('Database')}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#119cff] to-[#0d7acc] text-white font-medium rounded-lg hover:shadow-lg hover:shadow-[#119cff]/30 transition-all duration-300"
+            >
+              <Database className="w-5 h-5 mr-2" />
+              View Database
+            </button>
+          </motion.div>
         </motion.div>
         
         {/* Footer */}
