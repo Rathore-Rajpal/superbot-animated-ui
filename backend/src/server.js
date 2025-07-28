@@ -6,37 +6,113 @@ const mysql = require('mysql2/promise');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// CORS Configuration
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://localhost:5001', 'https://superbot.tasknova.io'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Database connection configuration
 const dbConfig = {
-  host: 'sql12.freesqldatabase.com',
-  user: 'sql12791893',
-  password: '3ALYm8PAgb',
-  database: 'sql12791893',
-  port: 3306,
+  host: process.env.DB_HOST || 'sql12.freesqldatabase.com',
+  user: process.env.DB_USER || 'sql12791893',
+  password: process.env.DB_PASSWORD || '3ALYm8PAgb',
+  database: process.env.DB_NAME || 'sql12791893',
+  port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ssl: process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: true } 
+    : undefined
 };
 
 // Create a connection pool
 const pool = mysql.createPool(dbConfig);
 
-// Test database connection
+// Test database connection and table structure
 const testConnection = async () => {
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     console.log('Successfully connected to the database');
-    connection.release();
+    
+    // Check if tables exist
+    const [tables] = await connection.query("SHOW TABLES LIKE 'task'");
+    if (tables.length === 0) {
+      console.log('Creating tasks table...');
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS task (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+          due_date DATE,
+          priority INT DEFAULT 1,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Add some sample data if table was just created
+      await connection.query(`
+        INSERT INTO task (title, status, due_date, priority) VALUES 
+        ('Complete project setup', 'pending', CURDATE() + INTERVAL 1 DAY, 1),
+        ('Test API endpoints', 'pending', CURDATE() + INTERVAL 2 DAY, 2),
+        ('Deploy application', 'pending', CURDATE() + INTERVAL 3 DAY, 3)
+      `);
+    }
+    
+    const [financeTables] = await connection.query("SHOW TABLES LIKE 'finance'");
+    if (financeTables.length === 0) {
+      console.log('Creating finances table...');
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS finance (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          description VARCHAR(255) NOT NULL,
+          amount DECIMAL(10, 2) NOT NULL,
+          type ENUM('income', 'expense') NOT NULL,
+          date DATE DEFAULT (CURDATE()),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
+      // Add some sample data
+      await connection.query(`
+        INSERT INTO finance (description, amount, type, date) VALUES 
+        ('Project Payment', 1000.00, 'income', CURDATE()),
+        ('Office Rent', -500.00, 'expense', CURDATE()),
+        ('Web Hosting', -50.00, 'expense', CURDATE() - INTERVAL 1 DAY)
+      `);
+    }
+    
   } catch (error) {
-    console.error('Error connecting to the database:', error);
+    console.error('Database connection error:', error);
+    throw error; // Re-throw to prevent app from starting if DB connection fails
+  } finally {
+    if (connection) connection.release();
   }
 };
 
-testConnection();
+// Test connection and initialize database
+testConnection().catch(error => {
+  console.error('Failed to initialize database:', error);
+  process.exit(1);
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'Backend is running',
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV || 'development'
+  });
+});
 
 // Routes for TASKS
 // Get all tasks

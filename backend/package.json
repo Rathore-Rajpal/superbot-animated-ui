@@ -4,8 +4,10 @@
   "description": "Backend for Superbot Animated UI with MySQL database integration",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node dist/server.js",
+    "dev": "nodemon src/server.js",
+    "build": "npm install --production && mkdir -p dist && cp -r src/ dist/ && cp package*.json dist/ && cp .env* dist/ || true",
+    "prestart": "npm run build"
   },
   "dependencies": {
     "cors": "^2.8.5",

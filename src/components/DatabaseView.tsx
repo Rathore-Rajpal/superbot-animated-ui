@@ -23,7 +23,8 @@ interface Finance {
   date: string;
 }
 
-const API_URL = 'http://localhost:5001/api';
+// API URL from environment variables
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export const DatabaseView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -32,6 +33,7 @@ export const DatabaseView: React.FC = () => {
   const [loading, setLoading] = useState({ tasks: false, finances: false });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   
   // Form states
   const [taskForm, setTaskForm] = useState<Omit<Task, 'id'>>({ 
@@ -51,12 +53,17 @@ export const DatabaseView: React.FC = () => {
   // Fetch data
   const fetchTasks = async () => {
     setLoading(prev => ({ ...prev, tasks: true }));
+    setConnectionError(null);
     try {
       const response = await fetch(`${API_URL}/tasks`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setTasks(data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      setConnectionError(`Failed to load tasks: ${error.message}. Please make sure the backend server is running at ${API_URL}`);
     } finally {
       setLoading(prev => ({ ...prev, tasks: false }));
     }
@@ -217,9 +224,28 @@ export const DatabaseView: React.FC = () => {
     setEditingId(item.id);
   };
 
+  if (connectionError) {
+    return (
+      <div className="p-4 max-w-6xl mx-auto">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Connection Error!</strong>
+          <span className="block sm:inline"> {connectionError}</span>
+          <div className="mt-2">
+            <p>Please ensure:</p>
+            <ol className="list-decimal pl-5 mt-1">
+              <li>The backend server is running at {API_URL}</li>
+              <li>There are no CORS issues (check browser console)</li>
+              <li>The database connection is properly configured</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-6">
-      <Tabs defaultValue="tasks" onValueChange={(value) => setActiveTab(value as any)}>
+    <div className="p-4 max-w-6xl mx-auto">
+      <Tabs defaultValue="tasks" className="w-full" onValueChange={(value) => setActiveTab(value as any)}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="finances">Finances</TabsTrigger>
