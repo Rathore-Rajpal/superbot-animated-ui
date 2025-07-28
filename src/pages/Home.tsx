@@ -14,6 +14,7 @@ const Home = ({ onSelectOption }: HomeProps) => {
   const [chatCategory, setChatCategory] = useState<string | null>(null);
 
   const handleOptionClick = (option: string) => {
+    // For all options, open chat UI first
     setChatCategory(option);
   };
 
@@ -140,8 +141,8 @@ const Home = ({ onSelectOption }: HomeProps) => {
               <OptionCard
                 title="Smart Assistant"
                 icon={<Sparkles className="w-6 h-6" />}
-                isPlaceholder={true}
-                className="bg-white/5 backdrop-blur-md border border-white/5 opacity-70 hover:opacity-100 transition-all duration-300"
+                onClick={() => handleOptionClick('Smart Assistant')}
+                className="bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#119cff]/50 transition-all duration-300 group-hover:scale-105"
               />
             </motion.div>
             
@@ -149,8 +150,8 @@ const Home = ({ onSelectOption }: HomeProps) => {
               <OptionCard
                 title="Analytics"
                 icon={<Zap className="w-6 h-6" />}
-                isPlaceholder={true}
-                className="bg-white/5 backdrop-blur-md border border-white/5 opacity-70 hover:opacity-100 transition-all duration-300"
+                onClick={() => handleOptionClick('Analytics')}
+                className="bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#119cff]/50 transition-all duration-300 group-hover:scale-105"
               />
             </motion.div>
           </div>

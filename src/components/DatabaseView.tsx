@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Modal } from '@/components/ui/modal';
 import { API_BASE } from '../../config.js';
 
 interface Task {
@@ -24,15 +25,27 @@ interface Finance {
   date: string;
 }
 
+interface DatabaseViewProps {
+  initialTab?: 'tasks' | 'finances';
+  title?: string;
+}
+
 // Use Render backend URL directly to ensure it works
 const RENDER_API_BASE = 'https://superbot-animated-ui.onrender.com/api';
 
-export const DatabaseView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('tasks');
+export const DatabaseView: React.FC<DatabaseViewProps> = ({ 
+  initialTab = 'tasks', 
+  title = 'Database Management' 
+}) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [finances, setFinances] = useState<Finance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showFinanceModal, setShowFinanceModal] = useState(false);
   
   // Form states
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -106,10 +119,10 @@ export const DatabaseView: React.FC = () => {
       });
       if (!response.ok) throw new Error('Failed to create task');
       await fetchTasks();
+      setShowTaskModal(false);
       setNewTask({ title: '', status: 'pending', due_date: '', priority: 1, assigned_to: '' });
     } catch (err) {
-      setError('Failed to create task');
-      console.error(err);
+      console.error('Error creating task:', err);
     }
   };
 
@@ -125,8 +138,7 @@ export const DatabaseView: React.FC = () => {
       await fetchTasks();
       setEditingTask(null);
     } catch (err) {
-      setError('Failed to update task');
-      console.error(err);
+      console.error('Error updating task:', err);
     }
   };
 
@@ -137,8 +149,7 @@ export const DatabaseView: React.FC = () => {
       if (!response.ok) throw new Error('Failed to delete task');
       await fetchTasks();
     } catch (err) {
-      setError('Failed to delete task');
-      console.error(err);
+      console.error('Error deleting task:', err);
     }
   };
 
@@ -152,10 +163,10 @@ export const DatabaseView: React.FC = () => {
       });
       if (!response.ok) throw new Error('Failed to create finance record');
       await fetchFinances();
+      setShowFinanceModal(false);
       setNewFinance({ description: '', amount: 0, type: 'expense', date: '' });
     } catch (err) {
-      setError('Failed to create finance record');
-      console.error(err);
+      console.error('Error creating finance record:', err);
     }
   };
 
@@ -171,8 +182,7 @@ export const DatabaseView: React.FC = () => {
       await fetchFinances();
       setEditingFinance(null);
     } catch (err) {
-      setError('Failed to update finance record');
-      console.error(err);
+      console.error('Error updating finance record:', err);
     }
   };
 
@@ -183,387 +193,379 @@ export const DatabaseView: React.FC = () => {
       if (!response.ok) throw new Error('Failed to delete finance record');
       await fetchFinances();
     } catch (err) {
-      setError('Failed to delete finance record');
-      console.error(err);
+      console.error('Error deleting finance record:', err);
     }
   };
 
-  if (error) {
-    return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <strong>Error:</strong> {error}
-          <Button 
-            onClick={() => setError(null)} 
-            className="ml-4"
-            variant="outline"
-            size="sm"
-          >
-            Dismiss
+  // Calculate financial summary
+  const totalIncome = finances
+    .filter(f => f.type === 'income')
+    .reduce((sum, f) => sum + Number(f.amount), 0);
+  
+  const totalExpenses = finances
+    .filter(f => f.type === 'expense')
+    .reduce((sum, f) => sum + Number(f.amount), 0);
+  
+  const balance = totalIncome - totalExpenses;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">{title}</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowTaskModal(true)} className="flex items-center gap-2">
+            <Plus size={16} />
+            Add Task
+          </Button>
+          <Button onClick={() => setShowFinanceModal(true)} className="flex items-center gap-2">
+            <Plus size={16} />
+            Add Finance
           </Button>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Database Management</h1>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'tasks' | 'finances')}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="finances">Finances</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
+          <TabsTrigger value="finances">Finances ({finances.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tasks" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Task Management</h2>
-          </div>
-
-          {/* Add new task form */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-3">Add New Task</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                placeholder="Task title"
-                value={newTask.title}
-                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-              />
-              <Select value={newTask.status} onValueChange={(value: any) => setNewTask({ ...newTask, status: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="date"
-                value={newTask.due_date}
-                onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <Input
-                type="number"
-                placeholder="Priority (1-5)"
-                value={newTask.priority}
-                onChange={(e) => setNewTask({ ...newTask, priority: parseInt(e.target.value) || 1 })}
-              />
-              <Input
-                placeholder="Assigned to"
-                value={newTask.assigned_to}
-                onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value })}
-              />
-            </div>
-            <Button onClick={createTask} className="mt-4" disabled={!newTask.title}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Task
-            </Button>
-          </div>
-
-          {/* Tasks table */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Actions</TableHead>
+          {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.map((task) => (
+                <TableRow key={task.id}>
+                  <TableCell>
+                    {editingTask?.id === task.id ? (
+                      <Input
+                        value={editingTask.title}
+                        onChange={(e) => setEditingTask({...editingTask, title: e.target.value})}
+                      />
+                    ) : (
+                      task.title
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingTask?.id === task.id ? (
+                      <Select value={editingTask.status} onValueChange={(value) => setEditingTask({...editingTask, status: value as any})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {task.status.replace('_', ' ')}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingTask?.id === task.id ? (
+                      <Input
+                        type="date"
+                        value={editingTask.due_date}
+                        onChange={(e) => setEditingTask({...editingTask, due_date: e.target.value})}
+                      />
+                    ) : (
+                      task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingTask?.id === task.id ? (
+                      <Input
+                        type="number"
+                        value={editingTask.priority}
+                        onChange={(e) => setEditingTask({...editingTask, priority: parseInt(e.target.value)})}
+                      />
+                    ) : (
+                      task.priority
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingTask?.id === task.id ? (
+                      <Input
+                        value={editingTask.assigned_to}
+                        onChange={(e) => setEditingTask({...editingTask, assigned_to: e.target.value})}
+                      />
+                    ) : (
+                      task.assigned_to || '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingTask?.id === task.id ? (
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={updateTask}>
+                          <Save size={14} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingTask(null)}>
+                          <X size={14} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setEditingTask(task)}>
+                          <Edit size={14} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => deleteTask(task.id)}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
-                  </TableRow>
-                ) : tasks.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">No tasks found</TableCell>
-                  </TableRow>
-                ) : (
-                  tasks.map((task) => (
-                    <TableRow key={task.id}>
-                      <TableCell>
-                        {editingTask?.id === task.id ? (
-                          <Input
-                            value={editingTask.title}
-                            onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
-                          />
-                        ) : (
-                          task.title
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingTask?.id === task.id ? (
-                          <Select value={editingTask.status} onValueChange={(value: any) => setEditingTask({ ...editingTask, status: value })}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            task.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {task.status.replace('_', ' ')}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingTask?.id === task.id ? (
-                          <Input
-                            type="date"
-                            value={editingTask.due_date}
-                            onChange={(e) => setEditingTask({ ...editingTask, due_date: e.target.value })}
-                          />
-                        ) : (
-                          task.due_date ? new Date(task.due_date).toLocaleDateString() : '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingTask?.id === task.id ? (
-                          <Input
-                            type="number"
-                            value={editingTask.priority}
-                            onChange={(e) => setEditingTask({ ...editingTask, priority: parseInt(e.target.value) || 1 })}
-                          />
-                        ) : (
-                          task.priority
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingTask?.id === task.id ? (
-                          <Input
-                            value={editingTask.assigned_to}
-                            onChange={(e) => setEditingTask({ ...editingTask, assigned_to: e.target.value })}
-                          />
-                        ) : (
-                          task.assigned_to || '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingTask?.id === task.id ? (
-                          <div className="flex space-x-2">
-                            <Button size="sm" onClick={updateTask}>
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingTask(null)}>
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline" onClick={() => setEditingTask(task)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => deleteTask(task.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </TabsContent>
 
         <TabsContent value="finances" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Finance Management</h2>
-          </div>
-
-          {/* Add new finance form */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-3">Add New Finance Record</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                placeholder="Description"
-                value={newFinance.description}
-                onChange={(e) => setNewFinance({ ...newFinance, description: e.target.value })}
-              />
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Amount"
-                value={newFinance.amount}
-                onChange={(e) => setNewFinance({ ...newFinance, amount: parseFloat(e.target.value) || 0 })}
-              />
+          {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
+          
+          {/* Financial Summary */}
+          <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">${totalIncome.toFixed(2)}</div>
+              <div className="text-sm text-gray-600">Total Income</div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <Select value={newFinance.type} onValueChange={(value: any) => setNewFinance({ ...newFinance, type: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="date"
-                value={newFinance.date}
-                onChange={(e) => setNewFinance({ ...newFinance, date: e.target.value })}
-              />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</div>
+              <div className="text-sm text-gray-600">Total Expenses</div>
             </div>
-            <Button onClick={createFinance} className="mt-4" disabled={!newFinance.description}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Record
-            </Button>
-          </div>
-
-          {/* Finances table */}
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
-                  </TableRow>
-                ) : finances.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">No finance records found</TableCell>
-                  </TableRow>
-                ) : (
-                  finances.map((finance) => (
-                    <TableRow key={finance.id}>
-                      <TableCell>
-                        {editingFinance?.id === finance.id ? (
-                          <Input
-                            value={editingFinance.description}
-                            onChange={(e) => setEditingFinance({ ...editingFinance, description: e.target.value })}
-                          />
-                        ) : (
-                          finance.description
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingFinance?.id === finance.id ? (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={editingFinance.amount}
-                            onChange={(e) => setEditingFinance({ ...editingFinance, amount: parseFloat(e.target.value) || 0 })}
-                          />
-                        ) : (
-                                                     <span className={finance.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                             {finance.type === 'income' ? '+' : '-'}${Math.abs(Number(finance.amount)).toFixed(2)}
-                           </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingFinance?.id === finance.id ? (
-                          <Select value={editingFinance.type} onValueChange={(value: any) => setEditingFinance({ ...editingFinance, type: value })}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="income">Income</SelectItem>
-                              <SelectItem value="expense">Expense</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            finance.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {finance.type}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingFinance?.id === finance.id ? (
-                          <Input
-                            type="date"
-                            value={editingFinance.date}
-                            onChange={(e) => setEditingFinance({ ...editingFinance, date: e.target.value })}
-                          />
-                        ) : (
-                          finance.date ? new Date(finance.date).toLocaleDateString() : '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingFinance?.id === finance.id ? (
-                          <div className="flex space-x-2">
-                            <Button size="sm" onClick={updateFinance}>
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingFinance(null)}>
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline" onClick={() => setEditingFinance(finance)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => deleteFinance(finance.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Summary */}
-          {finances.length > 0 && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium mb-3">Summary</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">Total Income</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    ${finances.filter(f => f.type === 'income').reduce((sum, f) => sum + Number(f.amount), 0).toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">Total Expenses</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    ${finances.filter(f => f.type === 'expense').reduce((sum, f) => sum + Number(f.amount), 0).toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">Balance</p>
-                  <p className={`text-2xl font-bold ${
-                    finances.reduce((sum, f) => f.type === 'income' ? sum + Number(f.amount) : sum - Number(f.amount), 0) >= 0 
-                      ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    ${Math.abs(finances.reduce((sum, f) => f.type === 'income' ? sum + Number(f.amount) : sum - Number(f.amount), 0)).toFixed(2)}
-                  </p>
-                </div>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${balance.toFixed(2)}
               </div>
+              <div className="text-sm text-gray-600">Balance</div>
             </div>
-          )}
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {finances.map((finance) => (
+                <TableRow key={finance.id}>
+                  <TableCell>
+                    {editingFinance?.id === finance.id ? (
+                      <Input
+                        value={editingFinance.description}
+                        onChange={(e) => setEditingFinance({...editingFinance, description: e.target.value})}
+                      />
+                    ) : (
+                      finance.description
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingFinance?.id === finance.id ? (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={editingFinance.amount}
+                        onChange={(e) => setEditingFinance({...editingFinance, amount: parseFloat(e.target.value)})}
+                      />
+                    ) : (
+                      <span className={finance.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                        ${Number(finance.amount).toFixed(2)}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingFinance?.id === finance.id ? (
+                      <Select value={editingFinance.type} onValueChange={(value) => setEditingFinance({...editingFinance, type: value as any})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="income">Income</SelectItem>
+                          <SelectItem value="expense">Expense</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        finance.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {finance.type}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingFinance?.id === finance.id ? (
+                      <Input
+                        type="date"
+                        value={editingFinance.date}
+                        onChange={(e) => setEditingFinance({...editingFinance, date: e.target.value})}
+                      />
+                    ) : (
+                      finance.date ? new Date(finance.date).toLocaleDateString() : '-'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingFinance?.id === finance.id ? (
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={updateFinance}>
+                          <Save size={14} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingFinance(null)}>
+                          <X size={14} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setEditingFinance(finance)}>
+                          <Edit size={14} />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => deleteFinance(finance.id)}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </TabsContent>
       </Tabs>
+
+      {/* Task Modal */}
+      <Modal
+        isOpen={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        title="Add New Task"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Title</label>
+            <Input
+              value={newTask.title}
+              onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+              placeholder="Enter task title"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Status</label>
+            <Select value={newTask.status} onValueChange={(value) => setNewTask({...newTask, status: value as any})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Due Date</label>
+            <Input
+              type="date"
+              value={newTask.due_date}
+              onChange={(e) => setNewTask({...newTask, due_date: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Priority</label>
+            <Input
+              type="number"
+              min="1"
+              max="5"
+              value={newTask.priority}
+              onChange={(e) => setNewTask({...newTask, priority: parseInt(e.target.value)})}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Assigned To</label>
+            <Input
+              value={newTask.assigned_to}
+              onChange={(e) => setNewTask({...newTask, assigned_to: e.target.value})}
+              placeholder="Enter assignee name"
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button onClick={createTask} className="flex-1">Create Task</Button>
+            <Button variant="outline" onClick={() => setShowTaskModal(false)} className="flex-1">Cancel</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Finance Modal */}
+      <Modal
+        isOpen={showFinanceModal}
+        onClose={() => setShowFinanceModal(false)}
+        title="Add New Finance Record"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <Input
+              value={newFinance.description}
+              onChange={(e) => setNewFinance({...newFinance, description: e.target.value})}
+              placeholder="Enter description"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Amount</label>
+            <Input
+              type="number"
+              step="0.01"
+              value={newFinance.amount}
+              onChange={(e) => setNewFinance({...newFinance, amount: parseFloat(e.target.value)})}
+              placeholder="Enter amount"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Type</label>
+            <Select value={newFinance.type} onValueChange={(value) => setNewFinance({...newFinance, type: value as any})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Date</label>
+            <Input
+              type="date"
+              value={newFinance.date}
+              onChange={(e) => setNewFinance({...newFinance, date: e.target.value})}
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button onClick={createFinance} className="flex-1">Create Record</Button>
+            <Button variant="outline" onClick={() => setShowFinanceModal(false)} className="flex-1">Cancel</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

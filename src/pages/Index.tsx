@@ -42,8 +42,10 @@ const Index = () => {
               </svg>
               Back to Home
             </button>
-            <h1 className="text-3xl font-bold mb-8">Database Management</h1>
-            <DatabaseView />
+            <DatabaseView 
+              initialTab="tasks"
+              title="Database Management"
+            />
           </div>
         </div>
       )}

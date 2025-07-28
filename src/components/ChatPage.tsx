@@ -27,6 +27,20 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const [showDatabase, setShowDatabase] = useState(false);
 
+  // Determine the database context based on category
+  const getDatabaseContext = () => {
+    switch (category.toLowerCase()) {
+      case 'tasks':
+        return { initialTab: 'tasks' as const, title: 'Task Management System' };
+      case 'finance':
+        return { initialTab: 'finances' as const, title: 'Finance Management System' };
+      default:
+        return { initialTab: 'tasks' as const, title: 'Database Management' };
+    }
+  };
+
+  const { initialTab, title } = getDatabaseContext();
+
   useEffect(() => {
     // Create and append the chat element
     const chatContainer = document.getElementById('chat-container');
@@ -230,28 +244,21 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
   return (
     <AnimatePresence>
       <motion.div 
-        className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       >
+        {/* Chat Window */}
         <motion.div 
-          className="relative w-full max-w-4xl h-[80vh] bg-card rounded-xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-4xl h-[70vh] bg-card rounded-xl shadow-2xl overflow-hidden mb-4"
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         >
-          <div className="absolute top-4 right-4 z-50 flex space-x-2">
-            <Button
-              onClick={() => setShowDatabase(!showDatabase)}
-              variant={showDatabase ? 'default' : 'outline'}
-              className="flex items-center space-x-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border-white/20"
-            >
-              <Database className="h-4 w-4" />
-              <span>{showDatabase ? 'Hide Database' : 'View Database'}</span>
-            </Button>
+          <div className="absolute top-4 right-4 z-50">
             <Button
               onClick={onClose}
               size="icon"
@@ -262,24 +269,57 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
             </Button>
           </div>
           <div className="relative w-full h-full">
-            <AnimatePresence>
-              {showDatabase && (
-                <motion.div 
-                  className="absolute inset-0 bg-black/80 z-40 overflow-y-auto p-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="max-w-6xl mx-auto">
-                    <DatabaseView />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
             <div id="chat-container" className="w-full h-full"></div>
           </div>
         </motion.div>
+
+        {/* View Database Button - Outside Chat UI */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          transition={{ delay: 0.2, type: 'spring', damping: 25, stiffness: 300 }}
+          className="flex justify-center"
+        >
+          <Button
+            onClick={() => setShowDatabase(!showDatabase)}
+            variant={showDatabase ? 'default' : 'outline'}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#119cff] to-[#0d7acc] hover:from-[#0d7acc] hover:to-[#119cff] text-white font-medium px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <Database className="h-5 w-5" />
+            <span>{showDatabase ? 'Hide Database' : 'View Database'}</span>
+          </Button>
+        </motion.div>
+
+        {/* Database Overlay */}
+        <AnimatePresence>
+          {showDatabase && (
+            <motion.div 
+              className="fixed inset-0 bg-black/90 z-40 overflow-y-auto p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="max-w-6xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-2xl font-bold text-white">{title}</h1>
+                  <Button
+                    onClick={() => setShowDatabase(false)}
+                    variant="ghost"
+                    className="text-white hover:bg-white/10"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <DatabaseView 
+                  initialTab={initialTab}
+                  title={title}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   );
