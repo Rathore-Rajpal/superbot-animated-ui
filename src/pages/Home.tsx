@@ -141,8 +141,8 @@ const Home = ({ onSelectOption }: HomeProps) => {
               <OptionCard
                 title="Smart Assistant"
                 icon={<Sparkles className="w-6 h-6" />}
-                onClick={() => handleOptionClick('Smart Assistant')}
-                className="bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#119cff]/50 transition-all duration-300 group-hover:scale-105"
+                isPlaceholder={true}
+                className="bg-white/5 backdrop-blur-md border border-white/5 opacity-50 cursor-not-allowed hover:opacity-50 transition-all duration-300"
               />
             </motion.div>
             
@@ -150,8 +150,8 @@ const Home = ({ onSelectOption }: HomeProps) => {
               <OptionCard
                 title="Analytics"
                 icon={<Zap className="w-6 h-6" />}
-                onClick={() => handleOptionClick('Analytics')}
-                className="bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#119cff]/50 transition-all duration-300 group-hover:scale-105"
+                isPlaceholder={true}
+                className="bg-white/5 backdrop-blur-md border border-white/5 opacity-50 cursor-not-allowed hover:opacity-50 transition-all duration-300"
               />
             </motion.div>
           </div>
