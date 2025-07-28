@@ -23,10 +23,7 @@ First, deploy your backend to a hosting platform:
    ```
 4. Deploy and get your backend URL (e.g., `https://your-backend.vercel.app`)
 
-#### **Option B: Railway**
-1. Connect your GitHub repository
-2. Deploy the `backend` folder
-3. Get your backend URL (e.g., `https://your-backend.railway.app`)
+
 
 #### **Option C: Render**
 1. Create a new Web Service
