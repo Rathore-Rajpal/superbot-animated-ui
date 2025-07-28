@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Connection Test</h1>
+    
+    <div class="test">
+        <h3>Backend Health Check</h3>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Database Connection Test</h3>
+        <button onclick="testTasks()">Test Tasks API</button>
+        <div id="tasks-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Finance Data Test</h3>
+        <button onclick="testFinances()">Test Finances API</button>
+        <div id="finances-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '🔄 Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Health Check PASSED<br>
+                            Status: ${data.status}<br>
+                            Message: ${data.message}<br>
+                            Database: ${data.database.host}<br>
+                            Uptime: ${data.uptime.toFixed(2)}s
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Health Check FAILED: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Health Check ERROR: ${error.message}</div>`;
+            }
+        }
+        
+        async function testTasks() {
+            const resultDiv = document.getElementById('tasks-result');
+            resultDiv.innerHTML = '🔄 Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/tasks`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Tasks API PASSED<br>
+                            Found ${data.length} tasks<br>
+                            First task: ${data[0]?.title || 'No tasks'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Tasks API FAILED: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Tasks API ERROR: ${error.message}</div>`;
+            }
+        }
+        
+        async function testFinances() {
+            const resultDiv = document.getElementById('finances-result');
+            resultDiv.innerHTML = '🔄 Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/finances`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Finances API PASSED<br>
+                            Found ${data.length} finance records<br>
+                            First record: ${data[0]?.description || 'No records'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Finances API FAILED: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Finances API ERROR: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('🌐 Testing API connection to:', API_BASE);
+            testHealth();
+        };
+    </script>
+</body>
+</html> 

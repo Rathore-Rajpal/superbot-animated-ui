@@ -7,9 +7,9 @@ const config = {
     API_URL: 'http://localhost:5001/api'
   },
   
-  // Production - UPDATE THIS WITH YOUR ACTUAL BACKEND URL
+  // Production - Your Render backend URL
   production: {
-    API_URL: 'https://your-backend-domain.com/api'
+    API_URL: 'https://superbot-animated-ui.onrender.com/api'
   }
 };
 
