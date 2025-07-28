@@ -39,7 +39,29 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
     }
   };
 
+  // Get category-specific chat configuration
+  const getChatConfig = () => {
+    switch (category.toLowerCase()) {
+      case 'tasks':
+        return {
+          title: "Tasknova Task Assistant",
+          welcomeMessage: "Hey there! I'm your Task assistant. How can I help you manage your tasks today?"
+        };
+      case 'finance':
+        return {
+          title: "Tasknova Finance Assistant",
+          welcomeMessage: "Hey there! I'm your Finance assistant. How can I help you manage your finances today?"
+        };
+      default:
+        return {
+          title: "Tasknova Superbot",
+          welcomeMessage: "Hey there! I'm your AI assistant. How can I help you today?"
+        };
+    }
+  };
+
   const { initialTab, title } = getDatabaseContext();
+  const chatConfig = getChatConfig();
 
   useEffect(() => {
     // Create and append the chat element
@@ -68,121 +90,109 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
     chatElement.style.height = '100%';
     chatContainer.appendChild(chatElement);
 
-    // Create a properly escaped script content
-    const escapedCategory = category.replace(/"/g, '\\"');
-    const scriptContent = `
-      (function() {
-        // Clean up any existing chat instance
-        if (window.n8nChatInstance) {
-          try {
-            window.n8nChatInstance.destroy();
-          } catch (e) {
-            console.warn('Error cleaning up previous chat instance:', e);
-          }
-          window.n8nChatInstance = null;
+    // Build the theme configuration
+    const themeConfig = {
+      button: {
+        iconColor: "#119cff",
+        backgroundColor: "#00081d"
+      },
+      chatWindow: {
+        borderRadiusStyle: "rounded",
+        avatarBorderRadius: 25,
+        messageBorderRadius: 6,
+        showTitle: true,
+        title: chatConfig.title,
+        titleAvatarSrc: "https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//357f28f4-9993-4f63-b609-c31f60111133_1752589383843.png",
+        avatarSize: 40,
+        welcomeMessage: chatConfig.welcomeMessage,
+        errorMessage: "Please connect me to n8n first",
+        backgroundColor: "#010c27",
+        height: 0,
+        width: 0,
+        fontSize: 16,
+        starterPromptFontSize: 15,
+        renderHTML: false,
+        clearChatOnReload: true,
+        showScrollbar: false,
+        botMessage: {
+          backgroundColor: "#119cff",
+          textColor: "#fafafa",
+          showAvatar: true,
+          avatarSrc: "https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//357f28f4-9993-4f63-b609-c31f60111133_1752589895884.gif"
+        },
+        userMessage: {
+          backgroundColor: "#fff6f3",
+          textColor: "#050505",
+          showAvatar: true,
+          avatarSrc: "https://www.svgrepo.com/show/532363/user-alt-1.svg"
+        },
+        textInput: {
+          placeholder: "Type your query",
+          backgroundColor: "#119cff",
+          textColor: "#fff6f3",
+          sendButtonColor: "#01061b",
+          maxChars: 50,
+          maxCharsWarningMessage: "You exceeded the characters limit. Please input less than 50 characters.",
+          autoFocus: true,
+          borderRadius: 6,
+          sendButtonBorderRadius: 50
+        },
+        uploadsConfig: {
+          enabled: true,
+          acceptFileTypes: ["png", "jpeg", "jpg", "pdf"],
+          maxSizeInMB: 5,
+          maxFiles: 1
+        },
+        voiceInputConfig: {
+          enabled: true,
+          maxRecordingTime: 15,
+          recordingNotSupportedMessage: "To record audio, use modern browsers like Chrome or Firefox that support audio recording"
         }
+      }
+    };
 
-        const initChat = () => {
-          if (window.n8nChatInitialized) return;
-          window.n8nChatInitialized = true;
-          
-          const config = {
-            n8nChatUrl: "https://n8nautomation.site/webhook/cf1de04f-3e38-426c-89f0-3bdb110a5dcf/chat",
-            metadata: { category: "${escapedCategory}" },
-            theme: ${JSON.stringify({
-              button: {
-                iconColor: "#119cff",
-                backgroundColor: "#00081d"
-              },
-              chatWindow: {
-                borderRadiusStyle: "rounded",
-                avatarBorderRadius: 25,
-                messageBorderRadius: 6,
-                showTitle: true,
-                title: "Tasknova Superbot",
-                titleAvatarSrc: "https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//357f28f4-9993-4f63-b609-c31f60111133_1752589383843.png",
-                avatarSize: 40,
-                welcomeMessage: "Hey there! I'm your Task assistant. How can I help you today?",
-                errorMessage: "Please connect me to n8n first",
-                backgroundColor: "#010c27",
-                height: 0,
-                width: 0,
-                fontSize: 16,
-                starterPrompts: [
-                  "What are today's tasks?",
-                  `Tell me about ${escapedCategory}`,
-                  "How can you help me?"
-                ],
-                starterPromptFontSize: 15,
-                renderHTML: false,
-                clearChatOnReload: true,
-                showScrollbar: false,
-                botMessage: {
-                  backgroundColor: "#119cff",
-                  textColor: "#fafafa",
-                  showAvatar: true,
-                  avatarSrc: "https://mmadclhbsuvkcbibxcsp.supabase.co/storage/v1/object/public/avatars//357f28f4-9993-4f63-b609-c31f60111133_1752589895884.gif"
-                },
-                userMessage: {
-                  backgroundColor: "#fff6f3",
-                  textColor: "#050505",
-                  showAvatar: true,
-                  avatarSrc: "https://www.svgrepo.com/show/532363/user-alt-1.svg"
-                },
-                textInput: {
-                  placeholder: "Type your query",
-                  backgroundColor: "#119cff",
-                  textColor: "#fff6f3",
-                  sendButtonColor: "#01061b",
-                  maxChars: 50,
-                  maxCharsWarningMessage: "You exceeded the characters limit. Please input less than 50 characters.",
-                  autoFocus: true,
-                  borderRadius: 6,
-                  sendButtonBorderRadius: 50
-                },
-                uploadsConfig: {
-                  enabled: true,
-                  acceptFileTypes: ["png", "jpeg", "jpg", "pdf"],
-                  maxSizeInMB: 5,
-                  maxFiles: 1
-                },
-                voiceInputConfig: {
-                  enabled: true,
-                  maxRecordingTime: 15,
-                  recordingNotSupportedMessage: "To record audio, use modern browsers like Chrome or Firefox that support audio recording"
-                }
-              }
-            }).replace(/</g, '\\u003c')}
-          };
-
-          const loadScript = () => {
-            if (window.Chatbot) {
-              window.n8nChatInstance = window.Chatbot.initFull(config);
-              return;
-            }
-            
-            const script = document.createElement('script');
-            script.src = 'https://cdn.n8nchatui.com/v1/embed.js';
-            script.type = 'module';
-            script.onload = () => {
-              if (window.Chatbot) {
-                window.n8nChatInstance = window.Chatbot.initFull(config);
-              }
-            };
-            document.head.appendChild(script);
-          };
-
-          loadScript();
-        };
-
-        // Initialize chat when DOM is ready
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initChat);
-        } else {
-          initChat();
-        }
-      })();
-    `;
+    // Create the script content using string concatenation
+    const scriptContent = 
+      '(function() {' +
+        'if (window.n8nChatInstance) {' +
+          'try {' +
+            'window.n8nChatInstance.destroy();' +
+          '} catch (e) {' +
+            'console.warn("Error cleaning up previous chat instance:", e);' +
+          '}' +
+          'window.n8nChatInstance = null;' +
+        '}' +
+        'const initChat = () => {' +
+          'if (window.n8nChatInitialized) return;' +
+          'window.n8nChatInitialized = true;' +
+          'const config = {' +
+            'n8nChatUrl: "https://n8nautomation.site/webhook/cf1de04f-3e38-426c-89f0-3bdb110a5dcf/chat",' +
+            'metadata: { category: "' + category.replace(/"/g, '\\"') + '" },' +
+            'theme: ' + JSON.stringify(themeConfig).replace(/</g, '\\u003c') +
+          '};' +
+          'const loadScript = () => {' +
+            'if (window.Chatbot) {' +
+              'window.n8nChatInstance = window.Chatbot.initFull(config);' +
+              'return;' +
+            '}' +
+            'const script = document.createElement("script");' +
+            'script.src = "https://cdn.n8nchatui.com/v1/embed.js";' +
+            'script.type = "module";' +
+            'script.onload = () => {' +
+              'if (window.Chatbot) {' +
+                'window.n8nChatInstance = window.Chatbot.initFull(config);' +
+              '}' +
+            '};' +
+            'document.head.appendChild(script);' +
+          '};' +
+          'loadScript();' +
+        '};' +
+        'if (document.readyState === "loading") {' +
+          'document.addEventListener("DOMContentLoaded", initChat);' +
+        '} else {' +
+          'initChat();' +
+        '}' +
+      '})();';
 
     // Create and append the script
     const script = document.createElement('script');
@@ -237,7 +247,7 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
         window.n8nChatInitialized = false;
       }
     };
-  }, [category]);
+  }, [category, chatConfig]);
 
 
 
