@@ -1,10 +1,10 @@
 // Configuration for API endpoints
-// Update this file with your actual backend URL before deployment
+// Always use Render backend for consistent operation
 
 const config = {
-  // Development
+  // Development - Use Render backend for consistency
   development: {
-    API_URL: 'http://localhost:5001/api'
+    API_URL: 'https://superbot-animated-ui.onrender.com/api'
   },
   
   // Production - Your Render backend URL

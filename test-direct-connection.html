@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Render API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 2px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #28a745; }
+        .error { background-color: #f8d7da; border-color: #dc3545; }
+        .info { background-color: #d1ecf1; border-color: #17a2b8; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 3px; }
+        button:hover { background: #0056b3; }
+        .url { font-family: monospace; background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Direct Render API Connection Test</h1>
+    
+    <div class="test info">
+        <h3>📋 Test Information</h3>
+        <p>This page directly tests the connection to your Render backend without any configuration dependencies.</p>
+        <div class="url">Backend URL: https://superbot-animated-ui.onrender.com/api</div>
+    </div>
+    
+    <div class="test">
+        <h3>🏥 Health Check</h3>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>📋 Tasks API</h3>
+        <button onclick="testTasks()">Test Tasks Endpoint</button>
+        <div id="tasks-result" class="result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>💰 Finances API</h3>
+        <button onclick="testFinances()">Test Finances Endpoint</button>
+        <div id="finances-result" class="result"></div>
+    </div>
+
+    <div class="test">
+        <h3>🔍 Debug Information</h3>
+        <button onclick="showDebugInfo()">Show Debug Info</button>
+        <div id="debug-result" class="result"></div>
+    </div>
+
+    <script>
+        const RENDER_API_BASE = 'https://superbot-animated-ui.onrender.com/api';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '🔄 Testing health endpoint...';
+            resultDiv.className = 'result';
+            
+            try {
+                console.log('Testing health endpoint:', `${RENDER_API_BASE}/health`);
+                const response = await fetch(`${RENDER_API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Health Check PASSED<br>
+                            Status: ${data.status}<br>
+                            Message: ${data.message}<br>
+                            Environment: ${data.environment}<br>
+                            Database: ${data.database.host}<br>
+                            Uptime: ${data.uptime.toFixed(2)}s<br>
+                            Response Time: ${response.headers.get('cf-cache-status') || 'Unknown'}
+                        </div>
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Health Check FAILED: ${response.status} - ${response.statusText}</div>`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Health Check ERROR: ${error.message}</div>`;
+                resultDiv.className = 'result error';
+                console.error('Health check error:', error);
+            }
+        }
+        
+        async function testTasks() {
+            const resultDiv = document.getElementById('tasks-result');
+            resultDiv.innerHTML = '🔄 Testing tasks endpoint...';
+            resultDiv.className = 'result';
+            
+            try {
+                console.log('Testing tasks endpoint:', `${RENDER_API_BASE}/tasks`);
+                const response = await fetch(`${RENDER_API_BASE}/tasks`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Tasks API PASSED<br>
+                            Found ${data.length} tasks<br>
+                            First task: ${data[0]?.title || 'No tasks'}<br>
+                            Status: ${data[0]?.status || 'N/A'}<br>
+                            Response Time: ${response.headers.get('cf-cache-status') || 'Unknown'}
+                        </div>
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Tasks API FAILED: ${response.status} - ${response.statusText}</div>`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Tasks API ERROR: ${error.message}</div>`;
+                resultDiv.className = 'result error';
+                console.error('Tasks API error:', error);
+            }
+        }
+        
+        async function testFinances() {
+            const resultDiv = document.getElementById('finances-result');
+            resultDiv.innerHTML = '🔄 Testing finances endpoint...';
+            resultDiv.className = 'result';
+            
+            try {
+                console.log('Testing finances endpoint:', `${RENDER_API_BASE}/finances`);
+                const response = await fetch(`${RENDER_API_BASE}/finances`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Finances API PASSED<br>
+                            Found ${data.length} finance records<br>
+                            First record: ${data[0]?.description || 'No records'}<br>
+                            Type: ${data[0]?.type || 'N/A'}<br>
+                            Response Time: ${response.headers.get('cf-cache-status') || 'Unknown'}
+                        </div>
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Finances API FAILED: ${response.status} - ${response.statusText}</div>`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Finances API ERROR: ${error.message}</div>`;
+                resultDiv.className = 'result error';
+                console.error('Finances API error:', error);
+            }
+        }
+        
+        function showDebugInfo() {
+            const resultDiv = document.getElementById('debug-result');
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <h4>🔍 Debug Information:</h4>
+                    <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                    <p><strong>Online Status:</strong> ${navigator.onLine ? 'Online' : 'Offline'}</p>
+                    <p><strong>API Base URL:</strong> ${RENDER_API_BASE}</p>
+                    <p><strong>Current Time:</strong> ${new Date().toISOString()}</p>
+                    <p><strong>Browser:</strong> ${navigator.appName} ${navigator.appVersion}</p>
+                </div>
+            `;
+            resultDiv.className = 'result info';
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('🌐 Starting direct Render API connection test');
+            console.log('🔗 API Base URL:', RENDER_API_BASE);
+            testHealth();
+        };
+    </script>
+</body>
+</html> 

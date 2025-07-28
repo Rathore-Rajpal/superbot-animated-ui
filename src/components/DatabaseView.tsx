@@ -24,6 +24,9 @@ interface Finance {
   date: string;
 }
 
+// Use Render backend URL directly to ensure it works
+const RENDER_API_BASE = 'https://superbot-animated-ui.onrender.com/api';
+
 export const DatabaseView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('tasks');
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -53,8 +56,8 @@ export const DatabaseView: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('🔗 Fetching tasks from:', `${API_BASE}/tasks`);
-      const response = await fetch(`${API_BASE}/tasks`);
+      console.log('🔗 Fetching tasks from:', `${RENDER_API_BASE}/tasks`);
+      const response = await fetch(`${RENDER_API_BASE}/tasks`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
       setTasks(data);
@@ -71,8 +74,8 @@ export const DatabaseView: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('🔗 Fetching finances from:', `${API_BASE}/finances`);
-      const response = await fetch(`${API_BASE}/finances`);
+      console.log('🔗 Fetching finances from:', `${RENDER_API_BASE}/finances`);
+      const response = await fetch(`${RENDER_API_BASE}/finances`);
       if (!response.ok) throw new Error('Failed to fetch finances');
       const data = await response.json();
       setFinances(data);
@@ -96,7 +99,7 @@ export const DatabaseView: React.FC = () => {
   // Task operations
   const createTask = async () => {
     try {
-      const response = await fetch(`${API_BASE}/tasks`, {
+      const response = await fetch(`${RENDER_API_BASE}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTask)
@@ -113,7 +116,7 @@ export const DatabaseView: React.FC = () => {
   const updateTask = async () => {
     if (!editingTask) return;
     try {
-      const response = await fetch(`${API_BASE}/tasks/${editingTask.id}`, {
+      const response = await fetch(`${RENDER_API_BASE}/tasks/${editingTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingTask)
@@ -130,7 +133,7 @@ export const DatabaseView: React.FC = () => {
   const deleteTask = async (id: number) => {
     if (!confirm('Are you sure you want to delete this task?')) return;
     try {
-      const response = await fetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${RENDER_API_BASE}/tasks/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete task');
       await fetchTasks();
     } catch (err) {
@@ -142,7 +145,7 @@ export const DatabaseView: React.FC = () => {
   // Finance operations
   const createFinance = async () => {
     try {
-      const response = await fetch(`${API_BASE}/finances`, {
+      const response = await fetch(`${RENDER_API_BASE}/finances`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newFinance)
@@ -159,7 +162,7 @@ export const DatabaseView: React.FC = () => {
   const updateFinance = async () => {
     if (!editingFinance) return;
     try {
-      const response = await fetch(`${API_BASE}/finances/${editingFinance.id}`, {
+      const response = await fetch(`${RENDER_API_BASE}/finances/${editingFinance.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingFinance)
@@ -176,7 +179,7 @@ export const DatabaseView: React.FC = () => {
   const deleteFinance = async (id: number) => {
     if (!confirm('Are you sure you want to delete this finance record?')) return;
     try {
-      const response = await fetch(`${API_BASE}/finances/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${RENDER_API_BASE}/finances/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete finance record');
       await fetchFinances();
     } catch (err) {

@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Test</title>
+    <title>API Test - Render Backend</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
         .success { background-color: #d4edda; border-color: #c3e6cb; }
         .error { background-color: #f8d7da; border-color: #f5c6cb; }
         button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .url { font-family: monospace; background: #f8f9fa; padding: 5px; margin: 10px 0; }
     </style>
 </head>
 <body>
-    <h1>🔧 API Connection Test</h1>
+    <h1>🔧 API Connection Test - Render Backend</h1>
+    
+    <div class="test">
+        <h3>Backend URL</h3>
+        <div class="url">https://superbot-animated-ui.onrender.com/api</div>
+        <p>✅ This backend is always running on Render (no need for local server)</p>
+    </div>
     
     <div class="test">
         <h3>Backend Health Check</h3>
@@ -34,7 +41,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:5001/api';
+        const API_BASE = 'https://superbot-animated-ui.onrender.com/api';
         
         async function testHealth() {
             const resultDiv = document.getElementById('health-result');
@@ -50,6 +57,7 @@
                             ✅ Health Check PASSED<br>
                             Status: ${data.status}<br>
                             Message: ${data.message}<br>
+                            Environment: ${data.environment}<br>
                             Database: ${data.database.host}<br>
                             Uptime: ${data.uptime.toFixed(2)}s
                         </div>
@@ -75,7 +83,8 @@
                         <div class="success">
                             ✅ Tasks API PASSED<br>
                             Found ${data.length} tasks<br>
-                            First task: ${data[0]?.title || 'No tasks'}
+                            First task: ${data[0]?.title || 'No tasks'}<br>
+                            Status: ${data[0]?.status || 'N/A'}
                         </div>
                     `;
                 } else {
@@ -99,7 +108,8 @@
                         <div class="success">
                             ✅ Finances API PASSED<br>
                             Found ${data.length} finance records<br>
-                            First record: ${data[0]?.description || 'No records'}
+                            First record: ${data[0]?.description || 'No records'}<br>
+                            Type: ${data[0]?.type || 'N/A'}
                         </div>
                     `;
                 } else {
@@ -112,7 +122,7 @@
         
         // Auto-test on page load
         window.onload = function() {
-            console.log('🌐 Testing API connection to:', API_BASE);
+            console.log('🌐 Testing Render API connection to:', API_BASE);
             testHealth();
         };
     </script>
