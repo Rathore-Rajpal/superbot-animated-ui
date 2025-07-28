@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { API_BASE } from '../../config.js';
 
 interface Task {
   id: number;
@@ -22,8 +23,6 @@ interface Finance {
   type: 'income' | 'expense';
   date: string;
 }
-
-const API_BASE = 'http://localhost:5001/api';
 
 export const DatabaseView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -54,13 +53,15 @@ export const DatabaseView: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log('🔗 Fetching tasks from:', `${API_BASE}/tasks`);
       const response = await fetch(`${API_BASE}/tasks`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
       setTasks(data);
+      console.log('✅ Tasks loaded:', data.length);
     } catch (err) {
       setError('Failed to load tasks');
-      console.error(err);
+      console.error('❌ Error fetching tasks:', err);
     } finally {
       setLoading(false);
     }
@@ -70,13 +71,15 @@ export const DatabaseView: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      console.log('🔗 Fetching finances from:', `${API_BASE}/finances`);
       const response = await fetch(`${API_BASE}/finances`);
       if (!response.ok) throw new Error('Failed to fetch finances');
       const data = await response.json();
       setFinances(data);
+      console.log('✅ Finances loaded:', data.length);
     } catch (err) {
       setError('Failed to load finances');
-      console.error(err);
+      console.error('❌ Error fetching finances:', err);
     } finally {
       setLoading(false);
     }

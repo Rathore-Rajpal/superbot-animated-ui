@@ -3,22 +3,29 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const app = express();
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Database configuration
+// Database configuration from environment variables
 const dbConfig = {
-  host: 'sql12.freesqldatabase.com',
-  user: 'sql12791893',
-  password: '3ALYm8PAgb',
-  database: 'sql12791893',
-  port: 3306,
+  host: process.env.DB_HOST || 'sql12.freesqldatabase.com',
+  user: process.env.DB_USER || 'sql12791893',
+  password: process.env.DB_PASSWORD || '3ALYm8PAgb',
+  database: process.env.DB_NAME || 'sql12791893',
+  port: process.env.DB_PORT || 3306,
   connectionLimit: 2,
   queueLimit: 0
 };
+
+console.log('🔧 Database Config:', {
+  host: dbConfig.host,
+  user: dbConfig.user,
+  database: dbConfig.database,
+  port: dbConfig.port
+});
 
 // Create connection pool
 const pool = mysql.createPool(dbConfig);
@@ -109,7 +116,13 @@ app.get('/api/health', (req, res) => {
     status: 'ok', 
     message: 'Server is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      host: dbConfig.host,
+      database: dbConfig.database,
+      connected: true
+    }
   });
 });
 
@@ -246,9 +259,10 @@ const startServer = async () => {
     await initializeTables();
     
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 API available at http://localhost:${PORT}/api`);
       console.log(`⏰ Started at: ${new Date().toISOString()}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
     
     // Graceful shutdown

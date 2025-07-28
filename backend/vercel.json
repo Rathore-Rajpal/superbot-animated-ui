@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "DB_HOST": "sql12.freesqldatabase.com",
+    "DB_USER": "sql12791893",
+    "DB_PASSWORD": "3ALYm8PAgb",
+    "DB_NAME": "sql12791893",
+    "DB_PORT": "3306",
+    "PORT": "5001"
+  }
+} 
