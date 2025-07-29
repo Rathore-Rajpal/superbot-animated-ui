@@ -101,14 +101,15 @@ const Home = ({ onSelectOption }: HomeProps) => {
             Experience the future of work with Tasknova's advanced AI technology.
           </p>
           
-          <motion.button
+          {/* Get Started button hidden */}
+          {/* <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#119cff] to-[#0d7acc] text-white font-medium rounded-lg hover:shadow-lg hover:shadow-[#119cff]/30 transition-all duration-300"
           >
             Get Started
             <ArrowRight className="w-5 h-5 ml-2" />
-          </motion.button>
+          </motion.button> */}
         </motion.div>
         
         {/* Features/Cards section */}

@@ -31,9 +31,9 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
   const getDatabaseContext = () => {
     switch (category.toLowerCase()) {
       case 'tasks':
-        return { initialTab: 'tasks' as const, title: 'Task Management System' };
+        return { initialTab: 'tasks' as const, title: 'Task Management System', showOnly: 'tasks' as const };
       case 'finance':
-        return { initialTab: 'finances' as const, title: 'Finance Management System' };
+        return { initialTab: 'finances' as const, title: 'Finance Management System', showOnly: 'finances' as const };
       default:
         return { initialTab: 'tasks' as const, title: 'Database Management' };
     }
@@ -60,7 +60,7 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
     }
   };
 
-  const { initialTab, title } = getDatabaseContext();
+  const { initialTab, title, showOnly } = getDatabaseContext();
   const chatConfig = getChatConfig();
 
   useEffect(() => {
@@ -325,6 +325,7 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
                 <DatabaseView 
                   initialTab={initialTab}
                   title={title}
+                  showOnly={showOnly}
                 />
               </div>
             </motion.div>
