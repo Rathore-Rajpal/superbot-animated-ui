@@ -320,7 +320,14 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{title}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">{title}</h1>
+          {showOnly && (
+            <span className="text-lg text-muted-foreground font-medium">
+              {showOnly === 'tasks' ? `(${tasks.length} records)` : `(${finances.length} records)`}
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
           {(!showOnly || showOnly === 'tasks') && (
             <Button onClick={() => setShowTaskModal(true)} className="flex items-center gap-2">
