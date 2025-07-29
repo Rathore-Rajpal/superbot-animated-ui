@@ -268,20 +268,24 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
           exit={{ y: 50, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         >
+          <div className="relative w-full h-full">
+            <div id="chat-container" className="w-full h-full"></div>
+          </div>
+        </motion.div>
+
+        {/* Close Button - Outside Chat Container */}
+        {!showDatabase && (
           <div className="absolute top-4 right-4 z-50">
             <Button
               onClick={onClose}
               size="icon"
               variant="ghost"
-              className="rounded-full w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm"
+              className="rounded-full w-12 h-12 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 shadow-lg"
             >
-              <X className="h-5 w-5 text-white" />
+              <X className="h-6 w-6 text-white font-bold" />
             </Button>
           </div>
-          <div className="relative w-full h-full">
-            <div id="chat-container" className="w-full h-full"></div>
-          </div>
-        </motion.div>
+        )}
 
         {/* View Database Button - Outside Chat UI */}
         <motion.div
@@ -305,7 +309,7 @@ export const ChatPage = ({ onClose, category }: ChatPageProps): JSX.Element => {
         <AnimatePresence>
           {showDatabase && (
             <motion.div 
-              className="fixed inset-0 bg-black/90 z-40 overflow-y-auto p-4"
+              className="fixed inset-0 bg-black/90 z-60 overflow-y-auto p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

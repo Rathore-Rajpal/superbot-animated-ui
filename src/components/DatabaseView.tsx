@@ -333,7 +333,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <span className={`px-2 py-1 rounded text-xs ${
+                        <span className={`px-2 py-1 rounded text-xs whitespace-nowrap min-w-[100px] inline-block ${
                           task.status === 'completed' ? 'bg-green-100 text-green-800' :
                           task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
@@ -652,7 +652,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                             </SelectContent>
                           </Select>
                         ) : (
-                          <span className={`px-2 py-1 rounded text-xs ${
+                          <span className={`px-2 py-1 rounded text-xs whitespace-nowrap min-w-[100px] inline-block ${
                             task.status === 'completed' ? 'bg-green-100 text-green-800' :
                             task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-gray-100 text-gray-800'
