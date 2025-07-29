@@ -51,6 +51,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
   const [finances, setFinances] = useState<Finance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dataLoaded, setDataLoaded] = useState({ tasks: false, finances: false });
   
   // Modal states
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -82,36 +83,76 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
 
   // Fetch data
   const fetchTasks = async () => {
+    // Skip if already loaded
+    if (dataLoaded.tasks && tasks.length > 0) return;
+    
     setLoading(true);
     setError(null);
     try {
       console.log('🔗 Fetching tasks from:', `${RENDER_API_BASE}/tasks`);
-      const response = await fetch(`${RENDER_API_BASE}/tasks`);
-      if (!response.ok) throw new Error('Failed to fetch tasks');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`${RENDER_API_BASE}/tasks`, {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       const data = await response.json();
       setTasks(data);
+      setDataLoaded(prev => ({ ...prev, tasks: true }));
       console.log('✅ Tasks loaded:', data.length);
     } catch (err) {
-      setError('Failed to load tasks');
-      console.error('❌ Error fetching tasks:', err);
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError('Failed to load tasks. Please check your connection.');
+        console.error('❌ Error fetching tasks:', err);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const fetchFinances = async () => {
+    // Skip if already loaded
+    if (dataLoaded.finances && finances.length > 0) return;
+    
     setLoading(true);
     setError(null);
     try {
       console.log('🔗 Fetching finances from:', `${RENDER_API_BASE}/finances`);
-      const response = await fetch(`${RENDER_API_BASE}/finances`);
-      if (!response.ok) throw new Error('Failed to fetch finances');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`${RENDER_API_BASE}/finances`, {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       const data = await response.json();
       setFinances(data);
+      setDataLoaded(prev => ({ ...prev, finances: true }));
       console.log('✅ Finances loaded:', data.length);
     } catch (err) {
-      setError('Failed to load finances');
-      console.error('❌ Error fetching finances:', err);
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError('Failed to load finances. Please check your connection.');
+        console.error('❌ Error fetching finances:', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -144,7 +185,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         body: JSON.stringify(newTask)
       });
       if (!response.ok) throw new Error('Failed to create task');
-      await fetchTasks();
+      
+      // Optimistically update the UI instead of refetching
+      const createdTask = await response.json();
+      setTasks(prev => [...prev, createdTask]);
       setShowTaskModal(false);
       setNewTask({ 
         title: '', 
@@ -158,6 +202,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       });
     } catch (err) {
       console.error('Error creating task:', err);
+      setError('Failed to create task. Please try again.');
     }
   };
 
@@ -170,10 +215,15 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         body: JSON.stringify(editingTask)
       });
       if (!response.ok) throw new Error('Failed to update task');
-      await fetchTasks();
+      
+      // Optimistically update the UI instead of refetching
+      setTasks(prev => prev.map(task => 
+        task.id === editingTask.id ? editingTask : task
+      ));
       setEditingTask(null);
     } catch (err) {
       console.error('Error updating task:', err);
+      setError('Failed to update task. Please try again.');
     }
   };
 
@@ -182,9 +232,12 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     try {
       const response = await fetch(`${RENDER_API_BASE}/tasks/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete task');
-      await fetchTasks();
+      
+      // Optimistically update the UI instead of refetching
+      setTasks(prev => prev.filter(task => task.id !== id));
     } catch (err) {
       console.error('Error deleting task:', err);
+      setError('Failed to delete task. Please try again.');
     }
   };
 
@@ -197,7 +250,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         body: JSON.stringify(newFinance)
       });
       if (!response.ok) throw new Error('Failed to create finance record');
-      await fetchFinances();
+      
+      // Optimistically update the UI instead of refetching
+      const createdFinance = await response.json();
+      setFinances(prev => [...prev, createdFinance]);
       setShowFinanceModal(false);
       setNewFinance({ 
         description: '', 
@@ -211,6 +267,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       });
     } catch (err) {
       console.error('Error creating finance record:', err);
+      setError('Failed to create finance record. Please try again.');
     }
   };
 
@@ -223,10 +280,15 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         body: JSON.stringify(editingFinance)
       });
       if (!response.ok) throw new Error('Failed to update finance record');
-      await fetchFinances();
+      
+      // Optimistically update the UI instead of refetching
+      setFinances(prev => prev.map(finance => 
+        finance.id === editingFinance.id ? editingFinance : finance
+      ));
       setEditingFinance(null);
     } catch (err) {
       console.error('Error updating finance record:', err);
+      setError('Failed to update finance record. Please try again.');
     }
   };
 
@@ -235,9 +297,12 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     try {
       const response = await fetch(`${RENDER_API_BASE}/finances/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete finance record');
-      await fetchFinances();
+      
+      // Optimistically update the UI instead of refetching
+      setFinances(prev => prev.filter(finance => finance.id !== id));
     } catch (err) {
       console.error('Error deleting finance record:', err);
+      setError('Failed to delete finance record. Please try again.');
     }
   };
 
