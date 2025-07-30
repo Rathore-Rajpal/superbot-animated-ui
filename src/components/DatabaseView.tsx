@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
+import { Skeleton } from '@/components/ui/skeleton';
 import { API_BASE } from '../../config.js';
 
 interface Task {
@@ -52,6 +53,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState({ tasks: false, finances: false });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Modal states
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -81,24 +84,63 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
     contact_person_contact_no: ''
   });
 
-  // Fetch data
-  const fetchTasks = async () => {
+  // Loading skeleton components
+  const TaskSkeleton = () => (
+    <div className="space-y-3">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+
+  const FinanceSkeleton = () => (
+    <div className="space-y-3">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+
+  // Memoized data for better performance
+  const memoizedTasks = useMemo(() => tasks, [tasks]);
+  const memoizedFinances = useMemo(() => finances, [finances]);
+
+  // Fetch data with aggressive optimizations
+  const fetchTasks = async (retryCount = 0) => {
     // Skip if already loaded
     if (dataLoaded.tasks && tasks.length > 0) return;
     
-    setLoading(true);
-    setError(null);
+    if (retryCount === 0) {
+      setLoading(true);
+      setError(null);
+    }
+    
     try {
-      console.log('🔗 Fetching tasks from:', `${RENDER_API_BASE}/tasks`);
+      console.log(`🚀 Fetching tasks... (attempt ${retryCount + 1})`);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased to 15 seconds for cold starts
       
       const response = await fetch(`${RENDER_API_BASE}/tasks`, {
         signal: controller.signal,
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive'
+        },
+        // Enable browser caching for better performance
+        cache: 'default'
       });
       
       clearTimeout(timeoutId);
@@ -107,36 +149,60 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       const data = await response.json();
       setTasks(data);
       setDataLoaded(prev => ({ ...prev, tasks: true }));
-      console.log('✅ Tasks loaded:', data.length);
+      console.log('⚡ Tasks loaded instantly:', data.length);
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.');
+        if (retryCount < 2) {
+          console.log(`⏳ Retrying tasks fetch... (${retryCount + 1}/3)`);
+          setTimeout(() => fetchTasks(retryCount + 1), 2000); // Retry after 2 seconds
+          return;
+        }
+        // Don't show error immediately, just keep loading state
+        console.log('⚠️ Server is slow, but continuing to wait...');
+        setTimeout(() => {
+          if (!dataLoaded.tasks) {
+            setError('Server is taking longer than expected. Please wait a moment and try again.');
+          }
+        }, 5000); // Show error only after 5 more seconds
       } else {
-        setError('Failed to load tasks. Please check your connection.');
+        if (retryCount < 2) {
+          console.log(`⏳ Retrying tasks fetch due to error... (${retryCount + 1}/3)`);
+          setTimeout(() => fetchTasks(retryCount + 1), 2000);
+          return;
+        }
+        setError('Unable to load tasks. Please check your connection and try again.');
         console.error('❌ Error fetching tasks:', err);
       }
     } finally {
-      setLoading(false);
+      if (retryCount === 0) {
+        setLoading(false);
+      }
     }
   };
 
-  const fetchFinances = async () => {
+  const fetchFinances = async (retryCount = 0) => {
     // Skip if already loaded
     if (dataLoaded.finances && finances.length > 0) return;
     
-    setLoading(true);
-    setError(null);
+    if (retryCount === 0) {
+      setLoading(true);
+      setError(null);
+    }
+    
     try {
-      console.log('🔗 Fetching finances from:', `${RENDER_API_BASE}/finances`);
+      console.log(`💰 Fetching finances... (attempt ${retryCount + 1})`);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased to 15 seconds for cold starts
       
       const response = await fetch(`${RENDER_API_BASE}/finances`, {
         signal: controller.signal,
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive'
+        },
+        // Enable browser caching for better performance
+        cache: 'default'
       });
       
       clearTimeout(timeoutId);
@@ -145,35 +211,135 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       const data = await response.json();
       setFinances(data);
       setDataLoaded(prev => ({ ...prev, finances: true }));
-      console.log('✅ Finances loaded:', data.length);
+      console.log('⚡ Finances loaded instantly:', data.length);
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.');
+        if (retryCount < 2) {
+          console.log(`⏳ Retrying finances fetch... (${retryCount + 1}/3)`);
+          setTimeout(() => fetchFinances(retryCount + 1), 2000); // Retry after 2 seconds
+          return;
+        }
+        // Don't show error immediately, just keep loading state
+        console.log('⚠️ Server is slow, but continuing to wait...');
+        setTimeout(() => {
+          if (!dataLoaded.finances) {
+            setError('Server is taking longer than expected. Please wait a moment and try again.');
+          }
+        }, 5000); // Show error only after 5 more seconds
       } else {
-        setError('Failed to load finances. Please check your connection.');
+        if (retryCount < 2) {
+          console.log(`⏳ Retrying finances fetch due to error... (${retryCount + 1}/3)`);
+          setTimeout(() => fetchFinances(retryCount + 1), 2000);
+          return;
+        }
+        setError('Unable to load finances. Please check your connection and try again.');
         console.error('❌ Error fetching finances:', err);
       }
     } finally {
-      setLoading(false);
+      if (retryCount === 0) {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Parallel data fetching for maximum speed with retry logic
+  const fetchAllData = async (retryCount = 0) => {
+    if (retryCount === 0) {
+      setLoading(true);
+      setError(null);
+    }
+    
+    try {
+      console.log(`🚀 Fetching all data in parallel... (attempt ${retryCount + 1})`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased to 15 seconds for cold starts
+      
+      const [tasksResponse, financesResponse] = await Promise.all([
+        fetch(`${RENDER_API_BASE}/tasks`, {
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive'
+          },
+          cache: 'default'
+        }),
+        fetch(`${RENDER_API_BASE}/finances`, {
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive'
+          },
+          cache: 'default'
+        })
+      ]);
+      
+      clearTimeout(timeoutId);
+      
+      if (!tasksResponse.ok) throw new Error(`Tasks: HTTP ${tasksResponse.status}`);
+      if (!financesResponse.ok) throw new Error(`Finances: HTTP ${financesResponse.status}`);
+      
+      const [tasksData, financesData] = await Promise.all([
+        tasksResponse.json(),
+        financesResponse.json()
+      ]);
+      
+      setTasks(tasksData);
+      setFinances(financesData);
+      setDataLoaded({ tasks: true, finances: true });
+      console.log('⚡ All data loaded in parallel:', tasksData.length, 'tasks,', financesData.length, 'finances');
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        if (retryCount < 2) {
+          console.log(`⏳ Retrying parallel fetch... (${retryCount + 1}/3)`);
+          setTimeout(() => fetchAllData(retryCount + 1), 2000); // Retry after 2 seconds
+          return;
+        }
+        // Don't show error immediately, just keep loading state
+        console.log('⚠️ Server is slow, but continuing to wait...');
+        setTimeout(() => {
+          if (!dataLoaded.tasks || !dataLoaded.finances) {
+            setError('Server is taking longer than expected. Please wait a moment and try again.');
+          }
+        }, 5000); // Show error only after 5 more seconds
+      } else {
+        if (retryCount < 2) {
+          console.log(`⏳ Retrying parallel fetch due to error... (${retryCount + 1}/3)`);
+          setTimeout(() => fetchAllData(retryCount + 1), 2000);
+          return;
+        }
+        setError('Unable to load data. Please check your connection and try again.');
+        console.error('❌ Error fetching data:', err);
+      }
+    } finally {
+      if (retryCount === 0) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    if (showOnly) {
-      // If showOnly is specified, only fetch the relevant data
-      if (showOnly === 'tasks') {
-        fetchTasks();
-      } else if (showOnly === 'finances') {
-        fetchFinances();
+    const loadData = async () => {
+      setIsInitialLoad(true);
+      try {
+        if (showOnly) {
+          // If showOnly is specified, only fetch the relevant data
+          if (showOnly === 'tasks') {
+            await fetchTasks();
+          } else if (showOnly === 'finances') {
+            await fetchFinances();
+          }
+        } else {
+          // If no showOnly, fetch all data in parallel for maximum speed
+          await fetchAllData();
+        }
+      } finally {
+        setIsInitialLoad(false);
       }
-    } else {
-      // If no showOnly, fetch based on active tab
-      if (activeTab === 'tasks') {
-        fetchTasks();
-      } else {
-        fetchFinances();
-      }
-    }
+    };
+    
+    loadData();
   }, [activeTab, showOnly]);
 
   // Task operations
@@ -322,7 +488,15 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold">{title}</h1>
-          {showOnly && (
+          {isInitialLoad && (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <span className="text-sm text-muted-foreground">
+                {loading ? 'Connecting to server...' : 'Loading data...'}
+              </span>
+            </div>
+          )}
+          {!isInitialLoad && showOnly && (
             <span className="text-lg text-muted-foreground font-medium">
               {showOnly === 'tasks' ? `(${tasks.length} records)` : `(${finances.length} records)`}
             </span>
@@ -330,13 +504,21 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
         </div>
         <div className="flex gap-2">
           {(!showOnly || showOnly === 'tasks') && (
-            <Button onClick={() => setShowTaskModal(true)} className="flex items-center gap-2">
+            <Button 
+              onClick={() => setShowTaskModal(true)} 
+              className="flex items-center gap-2"
+              disabled={isInitialLoad}
+            >
               <Plus size={16} />
               Add Task
             </Button>
           )}
           {(!showOnly || showOnly === 'finances') && (
-            <Button onClick={() => setShowFinanceModal(true)} className="flex items-center gap-2">
+            <Button 
+              onClick={() => setShowFinanceModal(true)} 
+              className="flex items-center gap-2"
+              disabled={isInitialLoad}
+            >
               <Plus size={16} />
               Add Finance
             </Button>
@@ -355,7 +537,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
           <TabsContent value="tasks" className="space-y-4">
             {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
             
-            <Table>
+            {isInitialLoad ? (
+              <TaskSkeleton />
+            ) : (
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
@@ -505,30 +690,35 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                 ))}
               </TableBody>
             </Table>
+            )}
           </TabsContent>
 
           <TabsContent value="finances" className="space-y-4">
             {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
             
-            {/* Financial Summary */}
-            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">₹{totalIncome.toFixed(2)}</div>
-                <div className="text-sm text-gray-600">Total Income</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">₹{totalExpenses.toFixed(2)}</div>
-                <div className="text-sm text-gray-600">Total Expenses</div>
-              </div>
-              <div className="text-center">
-                <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ₹{balance.toFixed(2)}
+            {isInitialLoad ? (
+              <FinanceSkeleton />
+            ) : (
+              <>
+                {/* Financial Summary */}
+                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">₹{totalIncome.toFixed(2)}</div>
+                    <div className="text-sm text-gray-600">Total Income</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">₹{totalExpenses.toFixed(2)}</div>
+                    <div className="text-sm text-gray-600">Total Expenses</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ₹{balance.toFixed(2)}
+                    </div>
+                    <div className="text-sm text-gray-600">Balance</div>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">Balance</div>
-              </div>
-            </div>
 
-            <Table>
+                <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Description</TableHead>
@@ -665,6 +855,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                 ))}
               </TableBody>
             </Table>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       ) : (
@@ -674,7 +866,10 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
             <div className="space-y-4">
               {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
               
-              <Table>
+              {isInitialLoad ? (
+                <TaskSkeleton />
+              ) : (
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
@@ -824,6 +1019,7 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   ))}
                 </TableBody>
               </Table>
+              )}
             </div>
           )}
 
@@ -831,25 +1027,29 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
             <div className="space-y-4">
               {error && <div className="text-red-500 p-4 bg-red-50 rounded-lg">{error}</div>}
               
-              {/* Financial Summary */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">₹{totalIncome.toFixed(2)}</div>
-                  <div className="text-sm text-gray-600">Total Income</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">₹{totalExpenses.toFixed(2)}</div>
-                  <div className="text-sm text-gray-600">Total Expenses</div>
-                </div>
-                <div className="text-center">
-                  <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{balance.toFixed(2)}
+              {isInitialLoad ? (
+                <FinanceSkeleton />
+              ) : (
+                <>
+                  {/* Financial Summary */}
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">₹{totalIncome.toFixed(2)}</div>
+                      <div className="text-sm text-gray-600">Total Income</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">₹{totalExpenses.toFixed(2)}</div>
+                      <div className="text-sm text-gray-600">Total Expenses</div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ₹{balance.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-gray-600">Balance</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">Balance</div>
-                </div>
-              </div>
 
-              <Table>
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
@@ -986,6 +1186,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({
                   ))}
                 </TableBody>
               </Table>
+                </>
+              )}
             </div>
           )}
         </>
